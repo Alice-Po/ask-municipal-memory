@@ -12,6 +12,7 @@ function fixNamesInDir(dir) {
     } else if (entry.isFile() && entry.name.endsWith('.pdf')) {
       let newName = entry.name.replace(/\s+/g, '-');
       newName = newName.replace(/[éè]/g, 'e');
+      newName = newName.toLowerCase();
       if (newName !== entry.name) {
         const newPath = path.join(dir, newName);
         fs.renameSync(fullPath, newPath);
