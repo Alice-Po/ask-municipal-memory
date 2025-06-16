@@ -33,6 +33,21 @@ npm run preview
 - **No backend in production:** A local script is used to update the vector database; the deployed application is read-only for consultation.
 - **LLM:** [Mistral](https://mistral.ai/) via [Hugging Face](https://huggingface.co/).
 
+## Chunks data structure
+
+```json
+{
+  "text": "extrait du chunk...",
+  "filename": "proces-verbal-2025-04-14.pdf",
+  "filepath": "/data/municipal/proces-verbal-2025-04-14.pdf",
+  "chunk_index": 3,
+  "total_chunks": 12,
+  "section_title": "Approbation du compte de gestion 2024",
+  "page_number": 5,
+  "timestamp": "2025-06-16T19:28:56.005Z"
+}
+```
+
 ## How It Works
 
 - Upload and process city council minutes (PDFs, scans, etc.) locally using Tesseract.js for OCR.
