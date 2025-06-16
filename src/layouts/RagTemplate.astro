@@ -1,0 +1,81 @@
+---
+import { SITE_TITLE, SITE_DESCRIPTION } from "../config.ts";
+
+import Footer from "$components/Footer.astro";
+import Header from "$components/Header.astro";
+import BaseLayout from "$layouts/BaseLayout.astro";
+import StackCard from "$components/StackCard.astro"
+import Pagination from "$components/Pagination.astro";
+import ProseWrapper from "./ProseWrapper.astro";
+import BigBlogEntry from "$components/BigBlogEntry.astro";
+
+const stack = [
+  { 
+    text: "Astro", 
+    icon: "astro", 
+    href: "https://astro.build" 
+  },
+  { 
+    text: "Javascript", 
+    icon: "javascript", 
+    href: "https://www.javascript.com" 
+  },
+  { 
+    text: "Typescript", 
+    icon: "typescript", 
+    href: "https://www.typescriptlang.org" 
+  },
+  { 
+    text: "Tailwind", 
+    icon: "tailwind", 
+    href: "https://tailwindcss.com" 
+  },
+  { 
+    text: "Svelte", 
+    icon: "svelte", 
+    href: "https://svelte.dev" 
+  },
+]
+---
+
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+  <Header active="blog" />
+  <main class="max-w-2xl lg:max-w-3xl mx-auto mt-8 px-4">
+    <ProseWrapper class="pb-8">
+      <slot />
+    </ProseWrapper>
+
+
+    <div class="my-14 space-y-16 max-w-3xl">
+    <h1>Ask Municipal Memory</h1>
+    <p>
+      Ask Municipal Memory is a project that allows you to ask questions about the history of your municipality.
+    </p>
+    <p>
+      It is a work in progress and will be updated regularly.
+    </p>
+    </div>
+
+
+
+    <!-- Tech Stack Section -->
+    <section class="animate">
+      <div class="space-y-4">
+        <p class="font-semibold text-black dark:text-white">
+          Site web construit avec 
+        </p>
+        <div class="flex flex-wrap items-center gap-2 mt-5">
+          {stack.map(item => (
+            <StackCard 
+              text={item.text}
+              icon={item.icon}
+              href={item.href}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>
