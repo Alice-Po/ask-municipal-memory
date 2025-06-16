@@ -8,6 +8,7 @@ import StackCard from "$components/StackCard.astro"
 import Pagination from "$components/Pagination.astro";
 import ProseWrapper from "./ProseWrapper.astro";
 import BigBlogEntry from "$components/BigBlogEntry.astro";
+import PdfOcrUploader from "$components/PdfOcrUploader.svelte";
 
 const stack = [
   { 
@@ -55,6 +56,9 @@ const stack = [
       It is a work in progress and will be updated regularly.
     </p>
     </div>
+    <section class="my-14">
+      <PdfOcrUploader client:only="svelte"/>
+    </section>
 
 
 
