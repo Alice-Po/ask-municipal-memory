@@ -9,7 +9,8 @@
     "build:prod": "astro check && astro build && pagefind",
     "preview": "astro preview",
     "astro": "astro",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "fix-pdf-name": "node scripts/fixPdfName.js"
   },
   "dependencies": {
     "@ascorbic/bluesky-loader": "^0.0.3",
