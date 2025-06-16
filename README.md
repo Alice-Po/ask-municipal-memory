@@ -1,85 +1,52 @@
+# Ask Municipal Memory: MVP for Transparent Municipal Council Search
+
 [<img width="1234" alt="new-blog" src="https://github.com/user-attachments/assets/4afbcff2-64a9-4808-81b9-96be4f10eeec" />](https://flo-bit.dev/blog-template/)
 
-# astro blog template
+## Project Overview
 
-minimalistic but opinionated blog template using [astro](https://astro.build/) and [svelte](https://svelte.dev/). aims to be super easy to deploy and use, with a focus on performance and SEO, ease-of-use and design.
+**Ask Municipal Memory** is a Minimum Viable Product (MVP) for a Retrieval-Augmented Generation (RAG) application. Its goal is to enable natural language search through the city council minutes of the municipality of Putanges-le-Lac. The project is designed to promote transparency and make public information more accessible to all citizens.
 
-See a [live demo here](https://flo-bit.dev/blog-template/) (also doubles as a tutorial on how to use this template).
+- **Mission:** Facilitate transparency and accessibility of municipal information by allowing anyone to query council minutes in plain language.
+- **Open Source:** This project welcomes contributions and feedback from the community. Feel free to open issues, submit pull requests, or suggest improvements!
 
-Features:
+## Quick Start
 
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data (automatically generated)
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown support
-- ✅ Pagination
-- ✅ Syntax highlighting (+ copy button)
-- ✅ Dark and light mode with toggle button or auto-detect
-- ✅ Search included
-- ✅ Tags for posts
-- ✅ Super easy to deploy as a static site
-- ✅ Includes some prebuilt components for you to use
-- ✅ Easy to edit by editing the markdown directly
-- ✅ Comments and likes via bluesky
+### Local Development
 
-## tutorials
+```bash
+npm install
+npm run dev
+```
 
-the demo blog doubles as a tutorial on how to use this template:
+### Production Build
 
-- [quick start with github pages](https://flo-bit.dev/blog-template/posts/how-to-use)
+```bash
+npm run build
+npm run preview
+```
 
-- [adding content](https://flo-bit.dev/blog-template/posts/adding-content)
+## Technical Specifications
 
-- [comments and likes via bluesky](https://flo-bit.dev/blog-template/posts/comments-via-bluesky)
+- **Tech Stack:** JavaScript, [Astro](https://astro.build/), [Svelte](https://svelte.dev/), deployed on Vercel.
+- **Vector Database:** [Qdrant](https://qdrant.tech/) (SaaS mode).
+- **Document Processing:** [Tesseract.js](https://tesseract.projectnaptha.com/) for OCR.
+- **No backend in production:** A local script is used to update the vector database; the deployed application is read-only for consultation.
+- **LLM:** [Mistral](https://mistral.ai/) via [Hugging Face](https://huggingface.co/).
 
-## quick start with github pages in 5 minutes
+## How It Works
 
-1. Fork [the repository of this blog](https://github.com/flo-bit/blog-template) 
+- Upload and process city council minutes (PDFs, scans, etc.) locally using Tesseract.js for OCR.
+- Extracted text is embedded and stored in Qdrant (vector database).
+- The web application allows users to ask questions in natural language and retrieves relevant excerpts using RAG and Mistral LLM.
+- The deployed app (on Vercel) is for consultation only; updates to the database are performed offline.
 
-- Either name your fork `<github-username>.github.io` if you want your blog to live at `<github-username>.github.io` 
+## Contributing & Feedback
 
-- Or choose any other repo name and it will live at `<github-username>.github.io/<repo-name>`
-
-2. In your repository settings, set up github pages to deploy using github actions (_SETTINGS_ -> _PAGES_ -> _SOURCE_: **Github Actions**)
-
-3. Set up your blog info in `src/config.ts`, most importantly the `SITE` and `BASE` variables:
-
-- `SITE`: set to `https://<github-username>.github.io`
-- `BASE`: if repo name is `<github-username>.github.io` set to `/`, otherwise set to `/<repo-name>`
-
-4. Once you push your changes to main your blog should be live in about 1-2 minutes at 
-`<github-username>.github.io` or `<github-username>.github.io/<repo-name>`
-
-5. Set up more info in `src/config.ts` (see [all options here](https://flo-bit.dev/blog-template/posts/configuring-the-blog))
-
-- `SITE_TITLE` is the title of your blog, and will be shown in the header and in search results
-- `SITE_DESCRIPTION` is the description of your blog, and will be shown e.g. in search results
-- `SITE_FAVICON` is the emoji that will be shown as favicon of your blog (will be shown in the header and as favicon)
-- `NAME` is the name of the author of the blog, will be shown in the footer as `(c) <YEAR> <NAME> - LICENSE`
-- `BLUESKY_IDENTIFIER` is your bluesky handle (without the `@`), this is needed for likes and comments to work 
-(see [comments via bluesky](https://flo-bit.dev/blog-template/posts/comments-via-bluesky))
-- `SOCIAL_LINKS` set your social media links here, e.g. `{ BLUESKY_URL: "https://bsky.app/profile/flo-bit.dev" }` 
-will be shown in the footer of the blog
-
-6. Edit `about.mdx` in `src/content/info/` to add your own about page.
-
-7. Remove all files from `src/content/blog/` and add your own blog posts there. Time to write your first blog post! 
-(see [adding content](https://flo-bit.dev/blog-template/posts/adding-content) for more info)
-
-8. Anytime you push to the main branch, your blog will automatically be updated (should usually take less than 2 minutes). 
-You can also go to the github actions tab to check the progress/status.
-
-If you run into any issues, feel free to [open an issue](https://github.com/flo-bit/blog-template/issues) or 
-[contact me on bluesky](https://bsky.app/profile/flo-bit.dev)
-
-## Notes
-
-Search currently only works in production mode (i.e. when running `npm run build`) not in dev mode (`npm run dev`).
+We encourage contributions and feedback! If you have ideas, find bugs, or want to help, please open an issue or a pull request. Your input helps make municipal information more accessible and transparent for everyone.
 
 ## Credits
 
-Adopted from the default astro blog template when running `npm create astro@latest`.
+This project is based on the excellent [Astro blog template by flo-bit](https://github.com/flo-bit/blog-template). Many thanks to flo-bit for the foundation and inspiration!
 
 ## License
 
