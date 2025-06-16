@@ -7,13 +7,17 @@
 
   let file;
   let ocrText = '';
+  let ocrPages = []; // [{ page_number, text }]
   let progress = 0;
   let processing = false;
   let error = '';
+  let uploadStatus = '';
+  let uploadProgress = 0;
 
   async function handleFileChange(event) {
     error = '';
     ocrText = '';
+    ocrPages = [];
     progress = 0;
     processing = true;
     const inputFile = event.target.files[0];
@@ -44,6 +48,7 @@
         });
         console.log(`OCR terminé pour la page ${i}`);
         results.push(text);
+        ocrPages.push({ page_number: i, text });
         progress = Math.round((i / pdf.numPages) * 100);
       }
       ocrText = results.join('\n');
@@ -66,6 +71,56 @@
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  function downloadOcrJson() {
+    if (!file) return;
+    const exportObj = {
+      filename: file.name,
+      filepath: file.webkitRelativePath || file.name, // webkitRelativePath si dispo, sinon nom
+      pages: ocrPages
+    };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name.replace(/\.pdf$/i, '.ocr.json');
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function uploadToQdrant() {
+    if (!file || !ocrPages.length) return;
+    
+    uploadStatus = 'Envoi en cours...';
+    uploadProgress = 0;
+    try {
+      const exportObj = {
+        filename: file.name,
+        filepath: file.webkitRelativePath || file.name,
+        pages: ocrPages
+      };
+
+      const response = await fetch('/api/QDrantUploader', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(exportObj),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Erreur lors de l\'envoi à Qdrant');
+      }
+
+      uploadStatus = `Succès ! ${result.pages_processed} pages traitées, ${result.total_chunks} chunks créés.`;
+      uploadProgress = 100;
+    } catch (e) {
+      uploadStatus = `Erreur : ${e.message}`;
+      console.error('Erreur upload Qdrant:', e);
+    }
+  }
 </script>
 
 <div class="space-y-4">
@@ -85,9 +140,27 @@
   {#if ocrText && !processing}
     <div>
       <button on:click={downloadTxt} class="px-4 py-2 bg-accent-600 text-white rounded">Download TXT</button>
+      <button on:click={downloadOcrJson} class="ml-2 px-4 py-2 bg-accent-700 text-white rounded">Download OCR JSON</button>
+      <button on:click={uploadToQdrant} class="ml-2 px-4 py-2 bg-accent-800 text-white rounded">Upload to Qdrant</button>
+      
+      {#if uploadStatus}
+        <div class="mt-2">
+          <div class="text-sm">{uploadStatus}</div>
+          {#if uploadProgress > 0}
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+              <div class="bg-accent-600 h-2.5 rounded-full" style="width: {uploadProgress}%"></div>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
       <details class="mt-2">
         <summary class="cursor-pointer">Show extracted text</summary>
         <pre class="bg-base-100 p-2 rounded max-h-96 overflow-auto">{ocrText}</pre>
+      </details>
+      <details class="mt-2">
+        <summary class="cursor-pointer">Show OCR JSON</summary>
+        <pre class="bg-base-100 p-2 rounded max-h-96 overflow-auto">{JSON.stringify({ filename: file?.name, filepath: file?.webkitRelativePath || file?.name, pages: ocrPages }, null, 2)}</pre>
       </details>
     </div>
   {/if}
