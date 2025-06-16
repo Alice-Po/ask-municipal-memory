@@ -10,6 +10,35 @@ import ProseWrapper from "./ProseWrapper.astro";
 import BigBlogEntry from "$components/BigBlogEntry.astro";
 import PdfOcrUploader from "$components/PdfOcrUploader.svelte";
 import QdrantUploader from "$components/QdrantUploader.svelte";
+import DocumentList from "$components/DocumentList.svelte";
+import fs from 'fs';
+import path from 'path';
+
+/**
+ * Liste récursivement tous les PDF dans un dossier donné.
+ * @param {string} dir - Dossier à parcourir
+ * @param {string} base - Chemin relatif pour l'URL
+ * @returns {{name: string, path: string}[]} Liste des PDF
+ */
+function listPdfs(dir: string, base: string = ''): {name: string, path: string}[] {
+  let results: {name: string, path: string}[] = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const relPath = path.join(base, entry.name);
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results = results.concat(listPdfs(fullPath, relPath));
+    } else if (entry.isFile() && entry.name.endsWith('.pdf')) {
+      results.push({
+        name: entry.name,
+        path: '/datas/' + relPath.replace(/\\/g, '/'),
+      });
+    }
+  }
+  return results;
+}
+
+const pdfDocuments = listPdfs(path.resolve('public/datas'));
 
 const stack = [
   { 
@@ -58,6 +87,7 @@ const stack = [
     </div>
 
     <section class="my-14 space-y-8">
+      
       <div>
         <h2 class="text-2xl font-semibold mb-4">Upload de documents</h2>
         <p class="text-base-600 dark:text-base-400 mb-4">
@@ -73,6 +103,10 @@ const stack = [
             <QdrantUploader client:only="svelte"/>
           </div>
         </div>
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold mb-4">Documents disponibles</h2>
+        <DocumentList documents={pdfDocuments} client:only="svelte" />
       </div>
     </section>
 
