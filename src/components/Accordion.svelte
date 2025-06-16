@@ -22,7 +22,10 @@
           <li><span class="font-mono text-xs text-base-600">{key}</span>: {value}</li>
         {/each}
       </ul>
-      <a href={pdfUrl} target="_blank" class="inline-block px-3 py-1 bg-accent-600 text-white rounded hover:bg-accent-700">Visualiser le PDF</a>
+      <div class="flex gap-2 items-center">
+        <a href={pdfUrl} target="_blank" class="inline-block px-3 py-1 bg-accent-600 text-white rounded hover:bg-accent-700">Visualiser le PDF</a>
+        <slot />
+      </div>
     </div>
   {/if}
 </div> 
