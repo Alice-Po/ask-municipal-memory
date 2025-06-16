@@ -9,6 +9,7 @@ import Pagination from "$components/Pagination.astro";
 import ProseWrapper from "./ProseWrapper.astro";
 import BigBlogEntry from "$components/BigBlogEntry.astro";
 import PdfOcrUploader from "$components/PdfOcrUploader.svelte";
+import QdrantUploader from "$components/QdrantUploader.svelte";
 
 const stack = [
   { 
@@ -46,21 +47,34 @@ const stack = [
       <slot />
     </ProseWrapper>
 
-
     <div class="my-14 space-y-16 max-w-3xl">
-    <h1>Ask Municipal Memory</h1>
-    <p>
-      Ask Municipal Memory is a project that allows you to ask questions about the history of your municipality.
-    </p>
-    <p>
-      It is a work in progress and will be updated regularly.
-    </p>
+      <h1>Ask Municipal Memory</h1>
+      <p>
+        Ask Municipal Memory est un projet qui vous permet de poser des questions sur l'histoire de votre municipalité.
+      </p>
+      <p>
+        C'est un projet en cours de développement qui sera régulièrement mis à jour.
+      </p>
     </div>
-    <section class="my-14">
-      <PdfOcrUploader client:only="svelte"/>
+
+    <section class="my-14 space-y-8">
+      <div>
+        <h2 class="text-2xl font-semibold mb-4">Upload de documents</h2>
+        <p class="text-base-600 dark:text-base-400 mb-4">
+          Vous pouvez soit uploader un fichier PDF pour l'OCR, soit un fichier texte directement.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-xl font-semibold mb-2">OCR de PDF</h3>
+            <PdfOcrUploader client:only="svelte"/>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Upload de texte</h3>
+            <QdrantUploader client:only="svelte"/>
+          </div>
+        </div>
+      </div>
     </section>
-
-
 
     <!-- Tech Stack Section -->
     <section class="animate">
