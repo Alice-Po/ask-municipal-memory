@@ -13,6 +13,7 @@
   let lastSystemPrompt = systemPrompt;
   let lastContextText = '';
   let lastChunksFound = 0;
+  let showWarning = false;
   
   // Configuration
   const API_ENDPOINT = '/api/chat';
@@ -339,6 +340,48 @@
       {/if}
     </div>
   </div>
+
+  <!-- Accordéon Warning Limitations -->
+  <div class="warning-accordion">
+    <button 
+      class="warning-accordion-header"
+      on:click={() => showWarning = !showWarning}
+    >
+      <span>⚠️ Avertissement - Limitations du service</span>
+      <span class="accordion-icon">{showWarning ? '▼' : '▶'}</span>
+    </button>
+    {#if showWarning}
+      <div class="warning-accordion-content">
+        <strong>⚠️ Important à savoir</strong>
+        <p>
+          Ce service utilise l'intelligence artificielle pour faciliter la découverte d'informations dans les comptes-rendus municipaux. Cependant, il présente certaines limitations importantes :
+        </p>
+        <ul>
+          <li><strong>Analyse partielle :</strong> Le système analyse uniquement les 10 extraits les plus pertinents par question, pas l'intégralité des documents</li>
+          <li><strong>Pas de mémoire :</strong> Chaque question est traitée indépendamment, sans mémorisation des échanges précédents</li>
+          <li><strong>Base de données limitée :</strong> Tous les comptes-rendus ne sont pas forcément inclus dans la base</li>
+        </ul>
+        <h4>Risques d'erreurs</h4>
+        <ul>
+          <li><strong>Hallucinations possibles :</strong> L'IA peut parfois générer des informations inexactes ou inventer des détails</li>
+          <li><strong>Interprétations erronées :</strong> Le contexte d'une décision peut être mal restitué</li>
+          <li><strong>Informations incomplètes :</strong> Des éléments importants peuvent être omis</li>
+        </ul>
+        <h4>Recommandations d'usage</h4>
+        <ul>
+          <li>✅ <strong>Utilisez ce service pour :</strong> découvrir rapidement des informations, identifier les documents pertinents, avoir un premier aperçu d'un sujet</li>
+          <li>❌ <strong>Ne vous fiez pas uniquement à ce service pour :</strong> prendre des décisions importantes, citer des informations officiellement, comprendre le contexte complet d'une décision</li>
+        </ul>
+        <p>
+          <strong>📋 Vérification recommandée</strong><br>
+          Consultez toujours les comptes-rendus sources mentionnés dans les réponses pour vérifier et approfondir les informations. Les références précises (nom du document, numéro de page) sont fournies à cet effet.
+        </p>
+        <p class="italic">
+          Ce service est un outil expérimental d'aide à la recherche, non une source d'information officielle.
+        </p>
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -606,5 +649,48 @@
 
   .context-text {
     @apply border-l-4 border-green-500;
+  }
+
+  .warning-accordion {
+    border: 1.5px solid #fbbf24;
+    border-radius: 8px;
+    margin-top: 1.5em;
+    background: #fffbea;
+  }
+  .warning-accordion-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75em 1em;
+    background: #fef3c7;
+    color: #b45309;
+    font-weight: bold;
+    font-size: 1em;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .warning-accordion-header:hover {
+    background: #fde68a;
+  }
+  .warning-accordion-content {
+    padding: 1em;
+    color: #92400e;
+    font-size: 0.98em;
+  }
+  .warning-accordion-content ul {
+    margin: 0.5em 0 1em 1.5em;
+    list-style: disc;
+  }
+  .warning-accordion-content h4 {
+    margin-top: 1em;
+    font-weight: bold;
+    color: #b45309;
+  }
+  .warning-accordion-content .italic {
+    font-style: italic;
+    color: #92400e;
   }
 </style>
