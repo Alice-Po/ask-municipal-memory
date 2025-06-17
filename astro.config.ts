@@ -8,8 +8,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
 import svelte from '@astrojs/svelte';
-import { pagefind } from 'vite-plugin-pagefind';
-
+import vercel from '@astrojs/vercel';
 import { BASE, SITE } from './src/config.ts';
 
 import customEmbeds from 'astro-custom-embeds';
@@ -35,10 +34,6 @@ export default defineConfig({
     ssr: {
       noExternal: [BASE + '/pagefind/pagefind.js'],
     },
-    plugins: [
-      // Only include pagefind in production builds
-      process.env.NODE_ENV === 'production' ? pagefind() : null,
-    ].filter(Boolean),
     build: {
       rollupOptions: {
         external: [BASE + '/pagefind/pagefind.js'],
@@ -80,5 +75,11 @@ export default defineConfig({
   },
   site: SITE,
   base: BASE,
-  output: 'static',
+  output: 'server',
+  adapter: vercel({
+    // Ajoute d'autres options si besoin, par exemple :
+    webAnalytics: { enabled: true },
+    // speedInsights: { enabled: true },
+    // isr: true, // Pour activer Incremental Static Regeneration
+  }),
 });
