@@ -107,7 +107,7 @@
         pages: state.ocrPages
       };
 
-      const uploadResponse = await fetch('/api/QrrantUploader', {
+      const uploadResponse = await fetch('/api/QdrantUploader', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

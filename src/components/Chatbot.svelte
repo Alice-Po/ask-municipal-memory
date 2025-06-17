@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { systemPrompt } from '../prompts/systemPrompt.js';
   
   // État du composant
   let message = '';
@@ -7,6 +8,11 @@
   let isLoading = false;
   let error = null;
   let chatContainer;
+  let showSystemPrompt = false;
+  let showContextText = false;
+  let lastSystemPrompt = systemPrompt;
+  let lastContextText = '';
+  let lastChunksFound = 0;
   
   // Configuration
   const API_ENDPOINT = '/api/chat';
@@ -53,7 +59,10 @@
       // Ajoute la réponse du bot
       addMessage(data.answer, MESSAGE_TYPES.BOT, {
         sources: data.sources,
-        chunksFound: data.chunksFound
+        chunksFound: data.chunksFound,
+        systemPrompt: data.systemPrompt,
+        contextText: data.contextText,
+        userPrompt: data.userPrompt
       });
       
     } catch (err) {
@@ -79,6 +88,13 @@
       timestamp: new Date(),
       ...metadata
     }];
+    
+    // Mettre à jour les variables de debug pour les réponses du bot
+    if (type === MESSAGE_TYPES.BOT) {
+      lastSystemPrompt = metadata.systemPrompt || '';
+      lastContextText = metadata.contextText || '';
+      lastChunksFound = metadata.chunksFound || 0;
+    }
     
     // Scroll vers le bas après un court délai
     setTimeout(() => {
@@ -288,6 +304,41 @@
       </div>
     {/if}
   </div>
+
+  <!-- Accordéons de debug -->
+  <div class="debug-accordions">
+    <!-- Accordéon Prompt Système -->
+    <div class="accordion">
+      <button 
+        class="accordion-header"
+        on:click={() => showSystemPrompt = !showSystemPrompt}
+      >
+        <span>🔧 Prompt Système</span>
+        <span class="accordion-icon">{showSystemPrompt ? '▼' : '▶'}</span>
+      </button>
+      {#if showSystemPrompt}
+        <div class="accordion-content">
+          <div class="prompt-text" >{lastSystemPrompt || 'Aucun prompt système disponible'}</div>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Accordéon Extraits Utilisés -->
+    <div class="accordion">
+      <button 
+        class="accordion-header"
+        on:click={() => showContextText = !showContextText}
+      >
+        <span>📄 Extraits Utilisés ({lastChunksFound || 0} extraits)</span>
+        <span class="accordion-icon">{showContextText ? '▼' : '▶'}</span>
+      </button>
+      {#if showContextText}
+        <div class="accordion-content">
+          <div class="context-text" >{lastContextText || 'Aucun extrait disponible'}</div>
+        </div>
+      {/if}
+    </div>
+  </div>
 </div>
 
 <style>
@@ -494,5 +545,66 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Styles pour les accordéons de debug */
+  .debug-accordions {
+    @apply border-t border-gray-200 dark:border-gray-700;
+  }
+
+  .accordion {
+    @apply border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .accordion-header {
+    @apply w-full flex items-center justify-between p-3 text-left;
+    @apply bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800;
+    @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+    @apply transition-colors cursor-pointer;
+  }
+
+  .accordion-icon {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+  }
+
+  .accordion-content {
+    @apply p-3 bg-white dark:bg-gray-800;
+  }
+
+  .prompt-text,
+  .context-text {
+    max-height: 500px;
+    overflow-y: scroll; /* Toujours afficher la barre */
+    scrollbar-width: thin;
+    scrollbar-color: #3182ce #f7fafc;
+    font-family: monospace;
+    font-size: 0.95em;
+    background: #f7fafc;
+    color: #2d3748;
+    border-radius: 8px;
+    padding: 1em;
+    margin: 0.5em 0;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  /* Chrome, Edge, Safari */
+  .prompt-text::-webkit-scrollbar,
+  .context-text::-webkit-scrollbar {
+    width: 10px;
+    background: #f7fafc;
+  }
+  .prompt-text::-webkit-scrollbar-thumb,
+  .context-text::-webkit-scrollbar-thumb {
+    background: #3182ce;
+    border-radius: 6px;
+  }
+
+  .prompt-text {
+    @apply border-l-4 border-blue-500;
+  }
+
+  .context-text {
+    @apply border-l-4 border-green-500;
   }
 </style>

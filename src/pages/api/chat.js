@@ -1,6 +1,7 @@
 export const prerender = false;
 import { config } from 'dotenv';
 import { InferenceClient } from '@huggingface/inference';
+import { systemPrompt } from '../../prompts/systemPrompt.js';
 
 config();
 
@@ -110,15 +111,6 @@ export async function POST({ request }) {
       .join('\n---\n');
 
     // 4. Construction du prompt pour Mistral
-    const systemPrompt = `Tu es un assistant municipal spécialisé dans les comptes-rendus de conseil municipal.
-
-Instructions :
-- Réponds de façon claire et concise
-- Cite les sources quand c'est possible (nom du document et numéro de page)
-- Si l'information n'est pas dans le contexte, dis-le honnêtement
-- Utilise un ton professionnel mais accessible
-- ne propose jamais à un utilisateur de donner plus d'informations que celles qui sont dans le contexte, l'utilisateur ne peut pas fournir d'autres documents`;
-
     const userPrompt = `Contexte des documents municipaux :
 ${contextText}
 
@@ -173,6 +165,9 @@ Question de l'utilisateur : ${message}`;
       answer,
       sources: sourcesWithUrls,
       chunksFound: topChunks.length,
+      systemPrompt,
+      contextText,
+      userPrompt,
     };
 
     console.log('[API] Envoi de la réponse finale');
