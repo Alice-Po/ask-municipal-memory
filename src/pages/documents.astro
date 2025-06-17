@@ -1,5 +1,5 @@
 ---
-import { SITE_TITLE, SITE_DESCRIPTION } from "../config.ts";
+import { PROD } from "../config.ts";
 
 import Footer from "$components/Footer.astro";
 import Header from "$components/Header.astro";
@@ -8,7 +8,6 @@ import DocumentList from "$components/DocumentList.svelte";
 import fs from 'fs';
 import path from 'path';
 
-const pdfDocuments = listPdfs(path.resolve('public/datas'));
 
 
 /**
@@ -52,7 +51,7 @@ const documents = listPdfs(path.resolve('public/datas'));
     </div>
 
     <div class="bg-base-50 dark:bg-base-900 rounded-lg p-6">
-        <DocumentList documents={pdfDocuments} client:only="svelte" />
+      <DocumentList documents={documents} isProd={PROD} client:only="svelte" />
     </div>
   </main>
 

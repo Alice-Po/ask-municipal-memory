@@ -7,6 +7,7 @@
   pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.mjs';
 
   export let documents = [];
+  export let isProd = false;
   
   // État pour chaque document
   let documentStates = new Map();
@@ -147,13 +148,15 @@
         metadata={doc}
         pdfUrl={doc.path}
       >
-        <button 
-          on:click={() => processDocument(doc)}
-          disabled={state?.processing}
-          class="inline-block px-3 py-1 bg-accent-600 text-white rounded hover:bg-accent-700 disabled:opacity-50"
-        >
-          {state?.processing ? 'Traitement en cours...' : 'Appliquer OCR'}
-        </button>
+        {#if !isProd}
+          <button 
+            on:click={() => processDocument(doc)}
+            disabled={state?.processing}
+            class="inline-block px-3 py-1 bg-accent-600 text-white rounded hover:bg-accent-700 disabled:opacity-50"
+          >
+            {state?.processing ? 'Traitement en cours...' : 'Appliquer OCR'}
+          </button>
+        {/if}
       </Accordion>
 
       {#if state?.processing || state?.error || state?.uploadStatus}
@@ -185,13 +188,15 @@
   {/each}
 </ul>
 
-<div class="space-y-4">
-  <div class="flex justify-end">
-    <button 
-      on:click={processAllSequentially}
-      class="px-4 py-2 bg-accent-600 text-white rounded hover:bg-accent-700"
-    >
-      Traiter tous les documents
-    </button>
+{#if !isProd}
+  <div class="space-y-4">
+    <div class="flex justify-end">
+      <button 
+        on:click={processAllSequentially}
+        class="px-4 py-2 bg-accent-600 text-white rounded hover:bg-accent-700"
+      >
+        Traiter tous les documents
+      </button>
+    </div>
   </div>
-</div> 
+{/if} 

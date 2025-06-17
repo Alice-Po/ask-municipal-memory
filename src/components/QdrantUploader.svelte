@@ -1,6 +1,5 @@
 ---
 <script>
-  import { onMount } from 'svelte';
 
   let file;
   let text = '';

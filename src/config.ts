@@ -4,6 +4,9 @@ import type { AccentColor, BaseColor } from './colors';
 const isDev = process.env.NODE_ENV === 'development';
 const isVercel = process.env.VERCEL === '1';
 
+// Production flag
+export const PROD = !isDev;
+
 // Base URL configuration
 export const BASE = isDev ? '' : isVercel ? '' : '/ask-municipal-memory';
 
@@ -30,9 +33,6 @@ export const NAME = 'Alice';
 
 // will be used in the footer as the license of the content (e.g. "All right reserved" or "CC-BY-SA 4.0")
 export const LICENSE = 'MIT licensed.';
-
-// will be used to identify your bluesky account, so that likes and comments can be shown on your posts
-export const BLUESKY_IDENTIFIER = process.env.BLUESKY_IDENTIFIER || null;
 
 export const SOURCE_LINK = 'https://github.com/Alice-Po/ask-municipal-memory';
 

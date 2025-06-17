@@ -1,8 +1,8 @@
-import { defineCollection, z } from "astro:content";
-import { glob } from "astro/loaders";
+import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
 
 const blog = defineCollection({
-  loader: glob({ pattern: "**/[^_]*.{md,mdx}", base: "./src/content/blog/" }),
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/blog/' }),
   // Type-check frontmatter using a schema
   schema: z.object({
     // title of the blog post, don't repeat this in the markdown part
@@ -57,13 +57,4 @@ const blog = defineCollection({
   }),
 });
 
-import { authorFeedLoader } from "@ascorbic/bluesky-loader";
-import { BLUESKY_IDENTIFIER } from "./config.ts";
-
-const posts = defineCollection({
-  loader: authorFeedLoader({
-    identifier: BLUESKY_IDENTIFIER,
-  }),
-});
-
-export const collections = { blog, posts };
+export const collections = { blog };
