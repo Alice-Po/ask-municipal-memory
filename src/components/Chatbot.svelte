@@ -565,9 +565,9 @@
 
   /* Responsive */
   @media (max-width: 640px) {
-    .chatbot-container {
+    /* .chatbot-container {
       @apply h-80;
-    }
+    } */
     
     .message-content {
       @apply max-w-[90%];
