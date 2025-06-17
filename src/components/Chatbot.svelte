@@ -293,7 +293,7 @@
 <style>
   .chatbot-container {
     @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700;
-    @apply flex flex-col h-96 max-h-96;
+    @apply flex flex-col;
     font-family: system-ui, -apple-system, sans-serif;
   }
 

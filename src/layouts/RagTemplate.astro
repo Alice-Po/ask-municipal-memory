@@ -89,22 +89,13 @@ const stack = [
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
   <Header active="blog" />
   <main class="max-w-2xl lg:max-w-3xl mx-auto mt-8 px-4">
-    <ProseWrapper class="pb-8">
-      <slot />
-    </ProseWrapper>
 
     <div class="my-14 space-y-16 max-w-3xl">
-      <h1>Ask Municipal Memory</h1>
       <div class="mt-12">
-        <h2 class="text-2xl font-semibold mb-4">Chatbot municipal</h2>
+        <h2 class="text-2xl font-semibold mb-4">Chatbot municipal pour la ville de Putanges-le-lac</h2>
         <Chatbot client:only="svelte" />
       </div>
-      <p>
-        Ask Municipal Memory est un projet qui vous permet de poser des questions sur l'histoire de votre municipalité.
-      </p>
-      <p>
-        C'est un projet en cours de développement qui sera régulièrement mis à jour.
-      </p>
+     
     </div>
 
     <section class="my-14 space-y-8">

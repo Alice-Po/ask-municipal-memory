@@ -17,7 +17,7 @@ export const SITE = isDev
 // MORE SETTINGS:
 
 // will be used for the the title and meta tags and in the header (if SITE_NAME is left blank)
-export const SITE_TITLE = 'Ask Municipal Memory';
+export const SITE_TITLE = 'Mémoires municipales';
 
 // will be used in the meta tags (and for example shown in search results)
 export const SITE_DESCRIPTION = 'A blog about municipal memory and knowledge management';
