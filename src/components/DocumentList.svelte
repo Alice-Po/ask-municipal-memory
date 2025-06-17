@@ -105,6 +105,12 @@
       console.log('Traitement terminé.');
     }
   }
+
+  async function processAllSequentially() {
+    for (const doc of documents) {
+      await processDocument(doc);
+    }
+  }
 </script>
 
 <ul class="space-y-2">
@@ -148,4 +154,15 @@
       {/if}
     </li>
   {/each}
-</ul> 
+</ul>
+
+<div class="space-y-4">
+  <div class="flex justify-end">
+    <button 
+      on:click={processAllSequentially}
+      class="px-4 py-2 bg-accent-600 text-white rounded hover:bg-accent-700"
+    >
+      Traiter tous les documents
+    </button>
+  </div>
+</div> 
