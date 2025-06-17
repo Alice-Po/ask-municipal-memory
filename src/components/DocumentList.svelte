@@ -103,10 +103,11 @@
       const exportObj = {
         filename: doc.name,
         filepath: doc.path,
+        year: doc.year,
         pages: state.ocrPages
       };
 
-      const uploadResponse = await fetch('/api/QDrantUploader', {
+      const uploadResponse = await fetch('/api/QrrantUploader', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -29,7 +29,7 @@
     success = '';
 
     try {
-      const response = await fetch('/api/QDrantUploader', {
+      const response = await fetch('/api/QdrantUploader', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

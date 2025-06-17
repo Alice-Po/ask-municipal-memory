@@ -25,7 +25,7 @@ function chunkText(text, maxLen = 1000) {
 
 export async function POST({ request }) {
   try {
-    const { filename, filepath, pages } = await request.json();
+    const { filename, filepath, year, pages } = await request.json();
     if (!pages || !Array.isArray(pages)) {
       console.error('[API] Format invalide: pages manquantes ou invalides');
       return new Response(
@@ -88,6 +88,7 @@ export async function POST({ request }) {
                 text: chunk,
                 filename: filename || 'unknown.txt',
                 filepath: filepath || filename || 'unknown.txt',
+                year: year || new Date().getFullYear(),
                 page_number: page.page_number,
                 chunk_index: i,
                 total_chunks: pageChunks,

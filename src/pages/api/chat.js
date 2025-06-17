@@ -95,6 +95,7 @@ export async function POST({ request }) {
           score: pt.score,
           filename: pt.payload?.filename,
           page: pt.payload?.page_number,
+          year: pt.payload?.year,
         }))
         .filter((chunk) => chunk.text) || [];
 
@@ -104,7 +105,7 @@ export async function POST({ request }) {
     const contextText = topChunks
       .map(
         (chunk) =>
-          `[Source: ${chunk.filename || 'Document'}${chunk.page ? `, page ${chunk.page}` : ''}]\n${chunk.text}`
+          `[Source: ${chunk.filename || 'Document'}${chunk.page ? `, page ${chunk.page}` : ''}${chunk.year ? `, année ${chunk.year}` : ''}]\n${chunk.text}`
       )
       .join('\n---\n');
 
@@ -143,10 +144,12 @@ Question de l'utilisateur : ${message}`;
 
     // 6. Construction des sources avec URLs
     const sourcesWithUrls = topChunks.map((chunk) => {
-      // Construction de l'URL du PDF basée sur le filename
+      // Construction de l'URL du PDF basée sur le filename et l'année
       let pdfUrl = null;
-      if (chunk.filename) {
-        // Extraction de l'année du filename (ex: "compte-rendu-seance-du-3-fevrier-2025.pdf" -> "2025")
+      if (chunk.filename && chunk.year) {
+        pdfUrl = `/datas/${chunk.year}/${chunk.filename}`;
+      } else if (chunk.filename) {
+        // Fallback : extraction de l'année du filename (ex: "compte-rendu-seance-du-3-fevrier-2025.pdf" -> "2025")
         const yearMatch = chunk.filename.match(/(\d{4})/);
         if (yearMatch) {
           const year = yearMatch[1];
@@ -157,6 +160,7 @@ Question de l'utilisateur : ${message}`;
       return {
         filename: chunk.filename,
         page: chunk.page,
+        year: chunk.year,
         score: chunk.score,
         url: pdfUrl,
         // URL avec ancre pour aller directement à la page (si supporté par le navigateur)

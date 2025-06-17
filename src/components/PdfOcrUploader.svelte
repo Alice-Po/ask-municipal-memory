@@ -100,7 +100,7 @@
         pages: ocrPages
       };
 
-      const response = await fetch('/api/QDrantUploader', {
+      const response = await fetch('/api/QdrantUploader', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

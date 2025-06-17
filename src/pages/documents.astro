@@ -8,16 +8,14 @@ import DocumentList from "$components/DocumentList.svelte";
 import fs from 'fs';
 import path from 'path';
 
-
-
 /**
  * Liste récursivement tous les PDF dans un dossier donné.
  * @param {string} dir - Dossier à parcourir
  * @param {string} base - Chemin relatif pour l'URL
- * @returns {{name: string, path: string}[]} Liste des PDF
+ * @returns {{name: string, path: string, year: number}[]} Liste des PDF avec année
  */
-function listPdfs(dir: string, base: string = ''): {name: string, path: string}[] {
-  let results: {name: string, path: string}[] = [];
+function listPdfs(dir: string, base: string = ''): {name: string, path: string, year: number}[] {
+  let results: {name: string, path: string, year: number}[] = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
     const relPath = path.join(base, entry.name);
@@ -25,9 +23,35 @@ function listPdfs(dir: string, base: string = ''): {name: string, path: string}[
     if (entry.isDirectory()) {
       results = results.concat(listPdfs(fullPath, relPath));
     } else if (entry.isFile() && entry.name.endsWith('.pdf')) {
+      // Extraire l'année du filepath
+      const pathParts = relPath.split(path.sep);
+      let year = null;
+      
+      // Chercher l'année dans les parties du chemin
+      for (const part of pathParts) {
+        if (/^\d{4}$/.test(part)) {
+          year = parseInt(part);
+          break;
+        }
+      }
+      
+      // Si pas d'année trouvée, essayer d'extraire du nom de fichier
+      if (!year) {
+        const yearMatch = entry.name.match(/\d{4}/);
+        if (yearMatch) {
+          year = parseInt(yearMatch[0]);
+        }
+      }
+      
+      // Fallback à l'année actuelle si aucune année trouvée
+      if (!year) {
+        year = new Date().getFullYear();
+      }
+      
       results.push({
         name: entry.name,
         path: '/datas/' + relPath.replace(/\\/g, '/'),
+        year: year
       });
     }
   }
