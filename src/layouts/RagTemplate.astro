@@ -43,9 +43,25 @@ const pdfDocuments = listPdfs(path.resolve('public/datas'));
 
 const stack = [
   { 
+    text: "Mistral", 
+    icon: "mistral", 
+    href: "https://mistral.ai" 
+  },
+  
+  { 
+    text: "Qdrant", 
+    icon: "qdrant", 
+    href: "https://qdrant.tech" 
+  },
+  { 
     text: "Astro", 
     icon: "astro", 
     href: "https://astro.build" 
+  },
+  { 
+    text: "Svelte", 
+    icon: "svelte", 
+    href: "https://svelte.dev" 
   },
   { 
     text: "Javascript", 
@@ -63,9 +79,9 @@ const stack = [
     href: "https://tailwindcss.com" 
   },
   { 
-    text: "Svelte", 
-    icon: "svelte", 
-    href: "https://svelte.dev" 
+    text: "pdf-js", 
+    icon: "pdf-js", 
+    href: "https://github.com/pdf-je/pdf-je" 
   },
 ]
 ---
@@ -120,7 +136,7 @@ const stack = [
     <section class="animate">
       <div class="space-y-4">
         <p class="font-semibold text-black dark:text-white">
-          Site web construit avec 
+          Service web construit avec des outils open source à préférence française et européenne.
         </p>
         <div class="flex flex-wrap items-center gap-2 mt-5">
           {stack.map(item => (
