@@ -11,6 +11,9 @@
   // État pour chaque document
   let documentStates = new Map();
   
+  // Stocker la taille de chaque document
+  let fileSizes = [];
+  
   // Initialiser l'état pour chaque document
   $: {
     documents.forEach(doc => {
@@ -25,6 +28,28 @@
         });
       }
     });
+  }
+
+  // Récupérer la taille des fichiers au montage
+  onMount(async () => {
+    fileSizes = await Promise.all(documents.map(async (doc) => {
+      let size = null;
+      try {
+        const response = await fetch(doc.path);
+        const arrayBuffer = await response.arrayBuffer();
+        size = arrayBuffer.byteLength;
+      } catch (e) {
+        size = null;
+      }
+      return size;
+    }));
+  });
+
+  function formatSize(size) {
+    if (!size) return '?';
+    if (size < 1024) return `${size} o`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} Ko`;
+    return `${(size / (1024 * 1024)).toFixed(2)} Mo`;
   }
 
   async function processDocument(doc) {
@@ -114,10 +139,14 @@
 </script>
 
 <ul class="space-y-2">
-  {#each documents as doc}
+  {#each documents as doc, i}
     {@const state = documentStates.get(doc.path)}
     <li>
-      <Accordion title={doc.name} metadata={doc} pdfUrl={doc.path}>
+      <Accordion 
+        title={`${doc.name} ` + (fileSizes[i] !== undefined ? `(${formatSize(fileSizes[i])})` : '(...)')}
+        metadata={doc}
+        pdfUrl={doc.path}
+      >
         <button 
           on:click={() => processDocument(doc)}
           disabled={state?.processing}
