@@ -106,6 +106,40 @@
     error = null;
   }
   
+  /**
+   * Ouvre un PDF dans un nouvel onglet
+   */
+  function openPdf(url, filename, page) {
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      console.warn('URL PDF non disponible pour:', filename);
+    }
+  }
+  
+  /**
+   * Formate le texte de la réponse pour rendre les sources cliquables
+   */
+  function formatAnswerWithClickableSources(answer, sources) {
+    if (!sources || sources.length === 0) return answer;
+    
+    let formattedAnswer = answer;
+    
+    // Remplace les références de sources par des liens cliquables
+    sources.forEach((source, index) => {
+      if (source.filename) {
+        const sourcePattern = new RegExp(`\\[Source: ${source.filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\]]*\\]`, 'g');
+        const replacement = source.urlWithPage 
+          ? `<a href="${source.urlWithPage}" target="_blank" class="source-link" title="Ouvrir ${source.filename} page ${source.page || '1'}">[Source: ${source.filename}${source.page ? `, page ${source.page}` : ''}]</a>`
+          : `[Source: ${source.filename}${source.page ? `, page ${source.page}` : ''}]`;
+        
+        formattedAnswer = formattedAnswer.replace(sourcePattern, replacement);
+      }
+    });
+    
+    return formattedAnswer;
+  }
+  
   // Message de bienvenue au montage
   onMount(() => {
     addMessage(
@@ -157,7 +191,7 @@
           
           <div class="message-bubble">
             <div class="message-text">
-              {message.content}
+              {@html formatAnswerWithClickableSources(message.content, message.sources)}
             </div>
             
             <!-- Métadonnées pour les réponses du bot -->
@@ -168,11 +202,23 @@
                 </div>
                 {#each message.sources as source}
                   <div class="source-item">
-                    <span class="source-filename">{source.filename || 'Document'}</span>
-                    {#if source.page}
-                      <span class="source-page">page {source.page}</span>
-                    {/if}
-                    <span class="source-score">({Math.round(source.score * 100)}% pertinence)</span>
+                    <button 
+                      on:click={() => openPdf(source.urlWithPage, source.filename, source.page)}
+                      class="source-link-btn"
+                      title="Ouvrir {source.filename} page {source.page || '1'}"
+                      disabled={!source.url}
+                    >
+                      <span class="source-filename">{source.filename || 'Document'}</span>
+                      {#if source.page}
+                        <span class="source-page">page {source.page}</span>
+                      {/if}
+                      <span class="source-score">({Math.round(source.score * 100)}% pertinence)</span>
+                      {#if source.url}
+                        <span class="source-icon">📄</span>
+                      {:else}
+                        <span class="source-icon-disabled">❌</span>
+                      {/if}
+                    </button>
                   </div>
                 {/each}
               </div>
@@ -320,6 +366,12 @@
     white-space: pre-wrap;
   }
 
+  /* Styles pour les liens de sources dans le texte */
+  .source-link {
+    @apply text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300;
+    @apply transition-colors cursor-pointer;
+  }
+
   .message-sources {
     @apply mt-3 pt-3 border-t border-gray-200 dark:border-gray-600;
   }
@@ -329,19 +381,34 @@
   }
 
   .source-item {
-    @apply text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-1;
+    @apply mb-1;
+  }
+
+  .source-link-btn {
+    @apply w-full text-left text-xs text-gray-500 dark:text-gray-400;
+    @apply flex items-center gap-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600;
+    @apply transition-colors cursor-pointer;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .source-filename {
-    @apply font-medium;
+    @apply font-medium text-gray-700 dark:text-gray-300;
   }
 
   .source-page {
-    @apply bg-gray-200 dark:bg-gray-600 px-1 rounded;
+    @apply bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs;
   }
 
   .source-score {
-    @apply text-gray-400;
+    @apply text-gray-400 text-xs;
+  }
+
+  .source-icon {
+    @apply text-green-500 ml-auto;
+  }
+
+  .source-icon-disabled {
+    @apply text-red-500 ml-auto;
   }
 
   .message-time {

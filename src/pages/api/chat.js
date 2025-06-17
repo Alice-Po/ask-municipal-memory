@@ -75,7 +75,7 @@ export async function POST({ request }) {
       },
       body: JSON.stringify({
         vector: embedding,
-        limit: 5, // Récupère les 5 chunks les plus pertinents
+        limit: 10, // Récupère les 5 chunks les plus pertinents
         with_payload: true,
         with_score: true, // Inclut les scores de similarité
       }),
@@ -115,7 +115,8 @@ Instructions :
 - Réponds de façon claire et concise
 - Cite les sources quand c'est possible (nom du document et numéro de page)
 - Si l'information n'est pas dans le contexte, dis-le honnêtement
-- Utilise un ton professionnel mais accessible`;
+- Utilise un ton professionnel mais accessible
+- ne propose jamais à un utilisateur de donner plus d'informations que celles qui sont dans le contexte, l'utilisateur ne peut pas fournir d'autres documents`;
 
     const userPrompt = `Contexte des documents municipaux :
 ${contextText}
