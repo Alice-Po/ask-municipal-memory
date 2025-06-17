@@ -37,16 +37,21 @@ const { active } = Astro.props;
       </a>
     </div>
     <div class="flex gap-x-10">
-      <!-- <HeaderLink
+      <HeaderLink
         href={BASE + "/"}
-        active={active === "blog"}
-        class="text-sm font-semibold leading-6">Blog</HeaderLink
+        active={active === "home"}
+        class="text-sm font-semibold leading-6">Accueil</HeaderLink
       >
       <HeaderLink
         href={BASE + "/about"}
         active={active === "about"}
-        class="text-sm font-semibold leading-6">About</HeaderLink
-      > -->
+        class="text-sm font-semibold leading-6">À propos</HeaderLink
+      >
+      <HeaderLink
+        href={BASE + "/documents"}
+        active={active === "documents"}
+        class="text-sm font-semibold leading-6">Documents</HeaderLink
+      >
 
       {MANUAL_DARK_MODE ? <ThemeToggle /> : null}
 

@@ -1,0 +1,51 @@
+---
+import { SITE_TITLE, SITE_DESCRIPTION } from "../config.ts";
+
+import Footer from "$components/Footer.astro";
+import Header from "$components/Header.astro";
+import BaseLayout from "$layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="À propos - " + SITE_TITLE} description={SITE_DESCRIPTION}>
+  <Header active="about" />
+
+  <main class="max-w-2xl lg:max-w-3xl mx-auto mt-8 px-4">
+    <div class="prose prose-lg dark:prose-invert max-w-none">
+      <h2>Le service</h2>
+      <p>Mémoires municipales est un outil de recherche dans les comptes-rendus municipaux. Il utilise l'intelligence artificielle pour analyser le contenu des documents et répondre à des questions formulées en français courant.
+        Concrètement : vous tapez une question, le système recherche dans la base de documents municipaux et fournit une réponse accompagnée des références (nom du document, numéro de page).</p>
+
+      <h2>Pourquoi ce service&nbsp;?</h2>
+      <p>
+        Après trois années d'expérience en médiation numérique, j'ai constaté que le véritable obstacle à l'accès à l'information n'est pas toujours la maladresse technique des utilisateurs, mais plutôt la façon dont cette information est présentée et rendue intelligible.<br>
+        Dans ma commune rurale de Putanges-le-Lac, beaucoup d'habitants – qu'il s'agisse de seniors peu familiers avec le numérique ou de jeunes légitimement méfiants envers l'intelligence artificielle – peinent à naviguer dans l'historique des comptes-rendus municipaux. Pourtant, cette information leur appartient et devrait être accessible à tous.
+      </p>
+
+      <h2>L'approche</h2>
+      <p>
+        Le projet "Mémoires municipales" est une expérimentation qui utilise des outils d'intelligence artificielle pour rendre la vie municipale plus transparente. Ce service permet de poser des questions en langage naturel sur les décisions et discussions de votre conseil municipal, en s'appuyant sur l'historique complet des comptes-rendus.
+      </p>
+
+      <h2>Les engagements</h2>
+      <ul>
+        <li><strong>Open source</strong> : Le code source est entièrement ouvert et consultable</li>
+        <li><strong>Technologies européennes</strong> : Les solutions d'origine européenne ont été privilégiées</li>
+        <li><strong>Transparence</strong> : Chaque réponse indique précisément ses sources (document, page, pertinence)</li>
+        <li><strong>Accessibilité</strong> : Interface simple, pensée pour tous les niveaux de confort numérique</li>
+      </ul>
+
+      <h2>Un MVP pour réfléchir ensemble</h2>
+      <p>
+        Ce service est avant tout une expérimentation, un prototype pour évaluer la pertinence de cette approche. L'objectif est de comprendre si cette technologie peut réellement servir la démocratie locale et mérite d'être développée davantage.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Si vous souhaitez échanger sur ce projet, discuter de son adaptation à votre commune, ou simplement partager vos réflexions, n'hésitez pas à me contacter.
+      </p>
+      <p><a href="https://alicepoggioli.fr">Alice Poggioli</a> - 2025</p>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout> 

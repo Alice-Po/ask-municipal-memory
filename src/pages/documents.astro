@@ -1,0 +1,60 @@
+---
+import { SITE_TITLE, SITE_DESCRIPTION } from "../config.ts";
+
+import Footer from "$components/Footer.astro";
+import Header from "$components/Header.astro";
+import BaseLayout from "$layouts/BaseLayout.astro";
+import DocumentList from "$components/DocumentList.svelte";
+import fs from 'fs';
+import path from 'path';
+
+const pdfDocuments = listPdfs(path.resolve('public/datas'));
+
+
+/**
+ * Liste récursivement tous les PDF dans un dossier donné.
+ * @param {string} dir - Dossier à parcourir
+ * @param {string} base - Chemin relatif pour l'URL
+ * @returns {{name: string, path: string}[]} Liste des PDF
+ */
+function listPdfs(dir: string, base: string = ''): {name: string, path: string}[] {
+  let results: {name: string, path: string}[] = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const relPath = path.join(base, entry.name);
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results = results.concat(listPdfs(fullPath, relPath));
+    } else if (entry.isFile() && entry.name.endsWith('.pdf')) {
+      results.push({
+        name: entry.name,
+        path: '/datas/' + relPath.replace(/\\/g, '/'),
+      });
+    }
+  }
+  return results;
+}
+
+const documents = listPdfs(path.resolve('public/datas'));
+---
+
+<BaseLayout title="Documents - " + SITE_TITLE} description="Gestion des documents municipaux">
+  <Header active="documents" />
+
+  <main class="max-w-4xl mx-auto mt-8 px-4">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-base-950 dark:text-base-50 mb-4">
+        Documents municipaux
+      </h1>
+      <p class="text-base-700 dark:text-base-300">
+        Gérez et traitez les documents PDF des conseils municipaux pour les rendre accessibles via le chatbot.
+      </p>
+    </div>
+
+    <div class="bg-base-50 dark:bg-base-900 rounded-lg p-6">
+        <DocumentList documents={pdfDocuments} client:only="svelte" />
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout> 
