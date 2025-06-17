@@ -75,7 +75,7 @@ export async function POST({ request }) {
       },
       body: JSON.stringify({
         vector: embedding,
-        limit: 10, // Récupère les 5 chunks les plus pertinents
+        limit: 5, // Récupère les 5 chunks les plus pertinents
         with_payload: true,
         with_score: true, // Inclut les scores de similarité
       }),
@@ -115,8 +115,7 @@ Instructions :
 - Réponds de façon claire et concise
 - Cite les sources quand c'est possible (nom du document et numéro de page)
 - Si l'information n'est pas dans le contexte, dis-le honnêtement
-- Utilise un ton professionnel mais accessible
-- ne propose jamais à un utilisateur de donner plus d'informations que celles qui sont dans le contexte, l'utilisateur ne peut pas fournir d'autres documents`;
+- Utilise un ton professionnel mais accessible`;
 
     const userPrompt = `Contexte des documents municipaux :
 ${contextText}
@@ -141,14 +140,33 @@ Question de l'utilisateur : ${message}`;
       llmRes.choices?.[0]?.message?.content || "Désolé, je n'ai pas pu générer de réponse.";
     console.log('[API] Réponse générée:', answer.substring(0, 100) + '...');
 
-    // 6. Retour de la réponse avec métadonnées
-    const responseData = {
-      answer,
-      sources: topChunks.map((chunk) => ({
+    // 6. Construction des sources avec URLs
+    const sourcesWithUrls = topChunks.map((chunk) => {
+      // Construction de l'URL du PDF basée sur le filename
+      let pdfUrl = null;
+      if (chunk.filename) {
+        // Extraction de l'année du filename (ex: "compte-rendu-seance-du-3-fevrier-2025.pdf" -> "2025")
+        const yearMatch = chunk.filename.match(/(\d{4})/);
+        if (yearMatch) {
+          const year = yearMatch[1];
+          pdfUrl = `/datas/${year}/${chunk.filename}`;
+        }
+      }
+
+      return {
         filename: chunk.filename,
         page: chunk.page,
         score: chunk.score,
-      })),
+        url: pdfUrl,
+        // URL avec ancre pour aller directement à la page (si supporté par le navigateur)
+        urlWithPage: chunk.page && pdfUrl ? `${pdfUrl}#page=${chunk.page}` : pdfUrl,
+      };
+    });
+
+    // 7. Retour de la réponse avec métadonnées
+    const responseData = {
+      answer,
+      sources: sourcesWithUrls,
       chunksFound: topChunks.length,
     };
 
