@@ -11,6 +11,7 @@ import BigBlogEntry from "$components/BigBlogEntry.astro";
 import PdfOcrUploader from "$components/PdfOcrUploader.svelte";
 import QdrantUploader from "$components/QdrantUploader.svelte";
 import DocumentList from "$components/DocumentList.svelte";
+import Chatbot from "$components/Chatbot.svelte";
 import fs from 'fs';
 import path from 'path';
 
@@ -78,6 +79,10 @@ const stack = [
 
     <div class="my-14 space-y-16 max-w-3xl">
       <h1>Ask Municipal Memory</h1>
+      <div class="mt-12">
+        <h2 class="text-2xl font-semibold mb-4">Chatbot municipal</h2>
+        <Chatbot client:only="svelte" />
+      </div>
       <p>
         Ask Municipal Memory est un projet qui vous permet de poser des questions sur l'histoire de votre municipalité.
       </p>
@@ -107,6 +112,7 @@ const stack = [
       <div>
         <h2 class="text-2xl font-semibold mb-4">Documents disponibles</h2>
         <DocumentList documents={pdfDocuments} client:only="svelte" />
+       
       </div>
     </section>
 

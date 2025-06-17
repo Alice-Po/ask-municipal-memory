@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import { QdrantClient } from '@qdrant/js-client-rest';
-import { HfInference } from '@huggingface/inference';
+import { InferenceClient } from '@huggingface/inference';
 import { config } from 'dotenv';
 import crypto from 'crypto';
 
@@ -50,7 +50,7 @@ export async function POST({ request }) {
       console.log(`[API] Creating collection ${qdrantCollection}`);
       // On suppose que tous les chunks ont la même taille d'embedding
       // On génère un embedding sur le premier texte de la première page pour la taille
-      const hf = new HfInference(hfKey);
+      const hf = new InferenceClient(hfKey);
       const testEmbedding = await hf.featureExtraction({
         model: 'sentence-transformers/all-MiniLM-L6-v2',
         inputs: pages[0].text,
@@ -64,7 +64,7 @@ export async function POST({ request }) {
     }
 
     // Pour chaque page, découper en chunks et stocker dans Qdrant
-    const hf = new HfInference(hfKey);
+    const hf = new InferenceClient(hfKey);
     let totalChunks = 0;
 
     for (const page of pages) {
