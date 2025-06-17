@@ -160,7 +160,7 @@
   // Message de bienvenue au montage
   onMount(() => {
     addMessage(
-      "Bonjour ! Je suis votre assistant municipal. Posez-moi des questions sur les comptes-rendus de conseil municipal et je vous répondrai en me basant sur les documents disponibles.",
+      "Bonjour ! Je suis un agent de recherche expérimental qui a pour but de rendre accessible l'information contenue dans les comptes-rendus de conseils municipaux. Posez-moi des questions  et je vous répondrai en me basant sur les documents disponibles.",
       MESSAGE_TYPES.BOT
     );
   });
@@ -172,9 +172,9 @@
     <div class="chat-title">
       <div class="chat-icon">🏛️</div>
       <div>
-        <h3 class="text-lg font-semibold">Assistant Municipal</h3>
+        <h3 class="text-lg font-semibold">Chatbot Municipal expérimental pour Putanges-le-Lac</h3>
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          Posez vos questions sur les comptes-rendus
+          Posez vos questions sur les comptes-rendus des conseils municipaux depuis 2016
         </p>
       </div>
     </div>
