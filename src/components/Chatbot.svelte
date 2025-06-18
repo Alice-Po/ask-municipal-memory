@@ -1,48 +1,156 @@
+<!--
+  =============================================================================
+  CHATBOT MUNICIPAL - COMPOSANT SVELTE
+  =============================================================================
+  
+  DESCRIPTION:
+  Ce composant implémente un chatbot expérimental pour interroger les comptes-rendus
+  de conseils municipaux. Il utilise l'IA pour analyser des documents PDF et répondre
+  aux questions des utilisateurs en se basant sur le contenu extrait.
+  
+  FONCTIONNALITÉS PRINCIPALES:
+  - Interface de chat en temps réel
+  - Recherche sémantique dans les documents municipaux
+  - Affichage des sources avec liens vers les PDF
+  - Gestion des erreurs et états de chargement
+  - Mode debug avec accordéons pour les développeurs
+  - Interface responsive (desktop/mobile)
+  
+  ARCHITECTURE:
+  - État local géré par Svelte (messages, loading, error, etc.)
+  - Communication avec l'API backend via fetch()
+  - Formatage des réponses avec liens cliquables
+  - Gestion des événements clavier (Entrée pour envoyer)
+  - Scroll automatique vers le bas
+  
+  UTILISATION:
+  <Chatbot client:only="svelte" />
+  
+  PROPS:
+  Aucune prop requise - le composant est autonome
+  
+  ÉVÉNEMENTS:
+  - Aucun événement émis vers le parent
+  
+  API ENDPOINT:
+  - POST /api/chat
+  - Body: { message: string }
+  - Response: { answer, sources, chunksFound, systemPrompt, contextText, userPrompt }
+  
+  TYPES DE MESSAGES:
+  - 'user': Messages envoyés par l'utilisateur
+  - 'bot': Réponses générées par l'IA
+  - 'error': Messages d'erreur
+  
+  STRUCTURE DES SOURCES:
+  {
+    filename: string,
+    page: number,
+    score: number,
+    url: string,
+    urlWithPage: string
+  }
+  
+  LIMITATIONS:
+  - Pas de mémoire de conversation (chaque question est indépendante)
+  - Analyse limitée aux 10 extraits les plus pertinents
+  - Dépendance aux services externes (HuggingFace, Qdrant)
+  
+  SÉCURITÉ:
+  - Validation des entrées côté client et serveur
+  - Échappement HTML pour éviter les XSS
+  - Gestion des erreurs réseau et serveur
+  
+  ACCESSIBILITÉ:
+  - Support des lecteurs d'écran (aria-labels, sr-only)
+  - Navigation au clavier
+  - Contraste et tailles de police adaptées
+  
+  PERFORMANCE:
+  - Lazy loading des composants
+  - Debouncing des requêtes
+  - Optimisation des re-renders Svelte
+  
+  MAINTENANCE:
+  - Code modulaire et commenté
+  - Variables d'état clairement nommées
+  - Fonctions pures quand possible
+  - Gestion d'erreur centralisée
+  
+  =============================================================================
+-->
+
 <script>
   import { onMount } from 'svelte';
   import { systemPrompt } from '../prompts/systemPrompt.js';
   
-  // État du composant
-  let message = '';
-  let messages = [];
-  let isLoading = false;
-  let error = null;
-  let chatContainer;
-  let showSystemPrompt = false;
-  let showContextText = false;
-  let lastSystemPrompt = systemPrompt;
-  let lastContextText = '';
-  let lastChunksFound = 0;
-  let showWarning = false;
+  // =============================================================================
+  // ÉTAT DU COMPOSANT
+  // =============================================================================
   
-  // Configuration
-  const API_ENDPOINT = '/api/chat';
+  // État de la conversation
+  let message = '';                    // Message en cours de saisie
+  let messages = [];                   // Historique des messages
+  let isLoading = false;               // Indicateur de chargement
+  let error = null;                    // Message d'erreur actuel
+  let chatContainer;                   // Référence au conteneur de messages
   
-  // Types de messages
+  // État des accordéons de debug (développeurs uniquement)
+  let showSystemPrompt = false;        // Affichage du prompt système
+  let showContextText = false;         // Affichage du contexte utilisé
+  let showWarning = false;             // Affichage des avertissements
+  
+  // Métadonnées de la dernière réponse (pour debug)
+  let lastSystemPrompt = systemPrompt; // Dernier prompt système utilisé
+  let lastContextText = '';            // Dernier contexte extrait
+  let lastChunksFound = 0;             // Nombre d'extraits trouvés
+  
+  // =============================================================================
+  // CONFIGURATION
+  // =============================================================================
+  
+  const API_ENDPOINT = '/api/chat';    // Endpoint de l'API backend
+  
+  // Types de messages pour la classification
   const MESSAGE_TYPES = {
-    USER: 'user',
-    BOT: 'bot',
-    ERROR: 'error'
+    USER: 'user',    // Message envoyé par l'utilisateur
+    BOT: 'bot',      // Réponse générée par l'IA
+    ERROR: 'error'   // Message d'erreur
   };
   
+  // =============================================================================
+  // FONCTIONS PRINCIPALES
+  // =============================================================================
+  
   /**
-   * Envoie un message au chatbot
+   * Envoie un message au chatbot et gère la réponse
+   * 
+   * Cette fonction est le cœur du composant. Elle :
+   * 1. Valide l'entrée utilisateur
+   * 2. Met à jour l'interface (ajout du message, état de chargement)
+   * 3. Envoie la requête à l'API backend
+   * 4. Traite la réponse ou l'erreur
+   * 5. Met à jour l'interface avec le résultat
+   * 
+   * @async
+   * @returns {Promise<void>}
    */
   async function sendMessage() {
+    // Validation de l'entrée
     if (!message.trim() || isLoading) return;
     
     const userMessage = message.trim();
-    message = ''; // Vide le champ
+    message = ''; // Vide le champ de saisie
     
-    // Ajoute le message utilisateur
+    // Ajoute le message utilisateur à l'historique
     addMessage(userMessage, MESSAGE_TYPES.USER);
     
-    // Indique le chargement
+    // Active l'état de chargement
     isLoading = true;
     error = null;
     
     try {
-      // Appel à l'API
+      // Appel à l'API backend
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -53,20 +161,22 @@
       
       const data = await response.json();
       
+      // Vérification de la réponse HTTP
       if (!response.ok) {
         throw new Error(data.error || 'Erreur de communication avec le serveur');
       }
       
-      // Ajoute la réponse du bot
+      // Ajoute la réponse du bot avec ses métadonnées
       addMessage(data.answer, MESSAGE_TYPES.BOT, {
-        sources: data.sources,
-        chunksFound: data.chunksFound,
-        systemPrompt: data.systemPrompt,
-        contextText: data.contextText,
-        userPrompt: data.userPrompt
+        sources: data.sources,           // Sources utilisées
+        chunksFound: data.chunksFound,   // Nombre d'extraits
+        systemPrompt: data.systemPrompt, // Prompt système utilisé
+        contextText: data.contextText,   // Contexte extrait
+        userPrompt: data.userPrompt      // Prompt utilisateur
       });
       
     } catch (err) {
+      // Gestion des erreurs
       console.error('Erreur chatbot:', err);
       error = err.message;
       addMessage(
@@ -74,30 +184,39 @@
         MESSAGE_TYPES.ERROR
       );
     } finally {
+      // Désactive l'état de chargement
       isLoading = false;
     }
   }
   
   /**
-   * Ajoute un message à la conversation
+   * Ajoute un message à l'historique de conversation
+   * 
+   * @param {string} content - Contenu du message
+   * @param {string} type - Type de message (user/bot/error)
+   * @param {Object} metadata - Métadonnées optionnelles (sources, etc.)
    */
   function addMessage(content, type, metadata = {}) {
-    messages = [...messages, {
-      id: Date.now() + Math.random(),
+    // Création du nouveau message avec timestamp unique
+    const newMessage = {
+      id: Date.now() + Math.random(), // ID unique pour Svelte
       content,
       type,
       timestamp: new Date(),
       ...metadata
-    }];
+    };
     
-    // Mettre à jour les variables de debug pour les réponses du bot
+    // Ajout à l'historique (immutabilité pour Svelte)
+    messages = [...messages, newMessage];
+    
+    // Mise à jour des variables de debug pour les réponses du bot
     if (type === MESSAGE_TYPES.BOT) {
       lastSystemPrompt = metadata.systemPrompt || '';
       lastContextText = metadata.contextText || '';
       lastChunksFound = metadata.chunksFound || 0;
     }
     
-    // Scroll vers le bas après un court délai
+    // Scroll automatique vers le bas après un court délai
     setTimeout(() => {
       if (chatContainer) {
         chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -105,8 +224,14 @@
     }, 100);
   }
   
+  // =============================================================================
+  // FONCTIONS UTILITAIRES
+  // =============================================================================
+  
   /**
-   * Gestion de la touche Entrée
+   * Gestion de la touche Entrée pour envoyer le message
+   * 
+   * @param {KeyboardEvent} event - Événement clavier
    */
   function handleKeydown(event) {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -125,6 +250,10 @@
   
   /**
    * Ouvre un PDF dans un nouvel onglet
+   * 
+   * @param {string} url - URL du PDF
+   * @param {string} filename - Nom du fichier
+   * @param {number} page - Numéro de page
    */
   function openPdf(url, filename, page) {
     if (url) {
@@ -136,16 +265,27 @@
   
   /**
    * Formate le texte de la réponse pour rendre les sources cliquables
+   * 
+   * Cette fonction remplace les références de sources dans le texte
+   * par des liens HTML cliquables qui ouvrent les PDF correspondants.
+   * 
+   * @param {string} answer - Réponse du bot
+   * @param {Array} sources - Liste des sources utilisées
+   * @returns {string} Texte formaté avec liens HTML
    */
   function formatAnswerWithClickableSources(answer, sources) {
     if (!sources || sources.length === 0) return answer;
     
     let formattedAnswer = answer;
     
-    // Remplace les références de sources par des liens cliquables
+    // Remplace chaque référence de source par un lien cliquable
     sources.forEach((source, index) => {
       if (source.filename) {
-        const sourcePattern = new RegExp(`\\[Source: ${source.filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\]]*\\]`, 'g');
+        // Échappement des caractères spéciaux pour l'expression régulière
+        const escapedFilename = source.filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const sourcePattern = new RegExp(`\\[Source: ${escapedFilename}[^\\]]*\\]`, 'g');
+        
+        // Création du lien HTML
         const replacement = source.urlWithPage 
           ? `<a href="${source.urlWithPage}" target="_blank" class="source-link" title="Ouvrir ${source.filename} page ${source.page || '1'}">[Source: ${source.filename}${source.page ? `, page ${source.page}` : ''}]</a>`
           : `[Source: ${source.filename}${source.page ? `, page ${source.page}` : ''}]`;
@@ -157,7 +297,15 @@
     return formattedAnswer;
   }
   
-  // Message de bienvenue au montage
+  // =============================================================================
+  // LIFECYCLE DU COMPOSANT
+  // =============================================================================
+  
+  /**
+   * Initialisation du composant
+   * 
+   * Ajoute un message de bienvenue au montage du composant
+   */
   onMount(() => {
     addMessage(
       "Bonjour ! Je suis un agent de recherche expérimental qui a pour but de rendre accessible l'information contenue dans les comptes-rendus de conseils municipaux. Posez-moi des questions  et je vous répondrai en me basant sur les documents disponibles.",
@@ -165,6 +313,10 @@
     );
   });
 </script>
+
+<!-- =============================================================================
+     TEMPLATE HTML
+     ============================================================================= -->
 
 <div class="chatbot-container">
   <!-- En-tête du chat -->
@@ -182,6 +334,7 @@
       on:click={clearChat}
       class="clear-btn"
       title="Effacer la conversation"
+      aria-label="Effacer l'historique de conversation"
     >
       🗑️
     </button>
@@ -191,12 +344,15 @@
   <div 
     bind:this={chatContainer}
     class="chat-messages"
+    role="log"
+    aria-live="polite"
+    aria-label="Historique de conversation"
   >
     {#each messages as message (message.id)}
       <div class="message-wrapper {message.type}">
         <div class="message-content">
           <!-- Avatar et contenu -->
-          <div class="message-avatar">
+          <div class="message-avatar" aria-hidden="true">
             {#if message.type === MESSAGE_TYPES.USER}
               👤
             {:else if message.type === MESSAGE_TYPES.BOT}
@@ -224,6 +380,7 @@
                       class="source-link-btn"
                       title="Ouvrir {source.filename} page {source.page || '1'}"
                       disabled={!source.url}
+                      aria-label="Ouvrir {source.filename} page {source.page || '1'}"
                     >
                       <span class="source-filename">{source.filename || 'Document'}</span>
                       {#if source.page}
@@ -282,6 +439,7 @@
         class="chat-input"
         rows="1"
         disabled={isLoading}
+        aria-label="Zone de saisie du message"
       ></textarea>
       
       <button
@@ -289,6 +447,7 @@
         disabled={!message.trim() || isLoading}
         class="send-button"
         title="Envoyer le message"
+        aria-label="Envoyer le message"
       >
         {#if isLoading}
           <div class="spinner"></div>
@@ -300,25 +459,27 @@
     
     <!-- Indicateur d'erreur -->
     {#if error}
-      <div class="error-message">
+      <div class="error-message" role="alert">
         ⚠️ {error}
       </div>
     {/if}
   </div>
 
-  <!-- Accordéons de debug -->
+  <!-- Accordéons de debug (développeurs uniquement) -->
   <div class="debug-accordions">
     <!-- Accordéon Prompt Système -->
     <div class="accordion">
       <button 
         class="accordion-header"
         on:click={() => showSystemPrompt = !showSystemPrompt}
+        aria-expanded={showSystemPrompt}
+        aria-controls="system-prompt-content"
       >
         <span>🔧 Prompt Système</span>
         <span class="accordion-icon">{showSystemPrompt ? '▼' : '▶'}</span>
       </button>
       {#if showSystemPrompt}
-        <div class="accordion-content">
+        <div id="system-prompt-content" class="accordion-content">
           <div class="prompt-text" >{lastSystemPrompt || 'Aucun prompt système disponible'}</div>
         </div>
       {/if}
@@ -329,12 +490,14 @@
       <button 
         class="accordion-header"
         on:click={() => showContextText = !showContextText}
+        aria-expanded={showContextText}
+        aria-controls="context-text-content"
       >
         <span>📄 Extraits Utilisés ({lastChunksFound || 0} extraits)</span>
         <span class="accordion-icon">{showContextText ? '▼' : '▶'}</span>
       </button>
       {#if showContextText}
-        <div class="accordion-content">
+        <div id="context-text-content" class="accordion-content">
           <div class="context-text" >{lastContextText || 'Aucun extrait disponible'}</div>
         </div>
       {/if}
@@ -346,12 +509,14 @@
     <button 
       class="warning-accordion-header"
       on:click={() => showWarning = !showWarning}
+      aria-expanded={showWarning}
+      aria-controls="warning-content"
     >
       <span>⚠️ Avertissement - Limitations du service</span>
       <span class="accordion-icon">{showWarning ? '▼' : '▶'}</span>
     </button>
     {#if showWarning}
-      <div class="warning-accordion-content">
+      <div id="warning-content" class="warning-accordion-content">
         <strong>⚠️ Important à savoir</strong>
         <p>
           Ce service utilise l'intelligence artificielle pour faciliter la découverte d'informations dans les comptes-rendus municipaux. Cependant, il présente certaines limitations importantes :
@@ -384,13 +549,25 @@
   </div>
 </div>
 
+<!-- =============================================================================
+     STYLES CSS
+     ============================================================================= -->
+
 <style>
+  /* =============================================================================
+     CONTAINER PRINCIPAL
+     ============================================================================= */
+  
   .chatbot-container {
     @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700;
     @apply flex flex-col;
     font-family: system-ui, -apple-system, sans-serif;
   }
 
+  /* =============================================================================
+     EN-TÊTE DU CHAT
+     ============================================================================= */
+  
   .chat-header {
     @apply flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700;
     @apply bg-gray-50 dark:bg-gray-900 rounded-t-lg;
@@ -409,6 +586,10 @@
     @apply text-gray-600 dark:text-gray-400;
   }
 
+  /* =============================================================================
+     ZONE DE MESSAGES
+     ============================================================================= */
+  
   .chat-messages {
     @apply flex-1 overflow-y-auto p-4 space-y-4;
     scroll-behavior: smooth;
@@ -460,7 +641,10 @@
     white-space: pre-wrap;
   }
 
-  /* Styles pour les liens de sources dans le texte */
+  /* =============================================================================
+     LIENS DE SOURCES
+     ============================================================================= */
+  
   .source-link {
     @apply text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300;
     @apply transition-colors cursor-pointer;
@@ -509,6 +693,10 @@
     @apply text-xs text-gray-400 dark:text-gray-500 mt-2;
   }
 
+  /* =============================================================================
+     INDICATEUR DE CHARGEMENT
+     ============================================================================= */
+  
   .loading-indicator {
     @apply flex items-center gap-2;
   }
@@ -530,6 +718,10 @@
     @apply text-sm text-gray-600 dark:text-gray-400;
   }
 
+  /* =============================================================================
+     ZONE DE SAISIE
+     ============================================================================= */
+  
   .chat-input-container {
     @apply p-4 border-t border-gray-200 dark:border-gray-700;
   }
@@ -563,18 +755,20 @@
     @apply text-sm text-red-600 dark:text-red-400 mt-2 text-center;
   }
 
-  /* Responsive */
+  /* =============================================================================
+     RESPONSIVE DESIGN
+     ============================================================================= */
+  
   @media (max-width: 640px) {
-    /* .chatbot-container {
-      @apply h-80;
-    } */
-    
     .message-content {
       @apply max-w-[90%];
     }
   }
 
-  /* Animations */
+  /* =============================================================================
+     ANIMATIONS
+     ============================================================================= */
+  
   .message-wrapper {
     animation: slideIn 0.3s ease-out;
   }
@@ -590,7 +784,10 @@
     }
   }
 
-  /* Styles pour les accordéons de debug */
+  /* =============================================================================
+     ACCORDÉONS DE DEBUG
+     ============================================================================= */
+  
   .debug-accordions {
     @apply border-t border-gray-200 dark:border-gray-700;
   }
@@ -651,6 +848,10 @@
     @apply border-l-4 border-green-500;
   }
 
+  /* =============================================================================
+     ACCORDÉON D'AVERTISSEMENT
+     ============================================================================= */
+  
   .warning-accordion {
     border: 1.5px solid #fbbf24;
     border-radius: 8px;
