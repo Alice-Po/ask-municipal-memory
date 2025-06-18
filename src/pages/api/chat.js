@@ -2,12 +2,14 @@ export const prerender = false;
 import { config } from 'dotenv';
 import { InferenceClient } from '@huggingface/inference';
 import { systemPrompt } from '../../prompts/systemPrompt.js';
+import { performHybridSearch, logSearchMetadata } from '../../utils/temporalSearch.js';
 
 config();
 
 /**
  * API Route pour le chatbot RAG
  * Gère les interactions utilisateur avec la base de connaissances municipale
+ * Inclut la recherche hybride temporelle pour améliorer la pertinence
  */
 export async function POST({ request }) {
   console.log('[API] Début de la requête POST /api/chat');
@@ -66,7 +68,7 @@ export async function POST({ request }) {
     const embedding = Array.isArray(embeddingRes) ? embeddingRes : embeddingRes[0];
     console.log('[API] Embedding généré, taille:', embedding.length);
 
-    // 2. Recherche vectorielle dans Qdrant
+    // 2. Recherche vectorielle dans Qdrant (augmentée pour compenser le filtrage)
     console.log('[API] Recherche dans Qdrant...');
     const qdrantRes = await fetch(`${qdrantUrl}/collections/${qdrantCollection}/points/search`, {
       method: 'POST',
@@ -76,7 +78,7 @@ export async function POST({ request }) {
       },
       body: JSON.stringify({
         vector: embedding,
-        limit: 10, // Récupère les 5 chunks les plus pertinents
+        limit: 20, // Augmenté pour compenser le filtrage temporel
         with_payload: true,
         with_score: true, // Inclut les scores de similarité
       }),
@@ -88,8 +90,8 @@ export async function POST({ request }) {
       throw new Error(qdrantData.status?.error || 'Erreur lors de la recherche Qdrant');
     }
 
-    // Extraction des chunks les plus pertinents
-    const topChunks =
+    // Extraction des chunks avec métadonnées
+    const rawChunks =
       qdrantData.result
         ?.map((pt) => ({
           text: pt.payload?.text,
@@ -100,23 +102,45 @@ export async function POST({ request }) {
         }))
         .filter((chunk) => chunk.text) || [];
 
-    console.log(`[API] Trouvé ${topChunks.length} chunks pertinents`);
+    console.log(`[API] Trouvé ${rawChunks.length} chunks dans la recherche vectorielle`);
 
-    // 3. Construction du contexte pour le LLM
-    const contextText = topChunks
+    // 3. Application de la recherche hybride temporelle
+    console.log('[API] Application de la recherche hybride temporelle...');
+    const hybridSearchOptions = {
+      temporalWeight: 0.3, // 30% de poids pour le facteur temporel
+      yearTolerance: 2, // Tolérance de ±2 ans
+      enableFiltering: true,
+      enableWeighting: true,
+    };
+
+    const { chunks: topChunks, metadata: searchMetadata } = performHybridSearch(
+      rawChunks,
+      message,
+      hybridSearchOptions
+    );
+
+    // Log des métadonnées de recherche
+    logSearchMetadata(searchMetadata, message);
+
+    // Limiter à 10 chunks pour le contexte LLM
+    const finalChunks = topChunks.slice(0, 10);
+    console.log(`[API] ${finalChunks.length} chunks sélectionnés pour le contexte`);
+
+    // 4. Construction du contexte pour le LLM
+    const contextText = finalChunks
       .map(
         (chunk) =>
-          `[Source: ${chunk.filename || 'Document'}${chunk.page ? `, page ${chunk.page}` : ''}${chunk.year ? `, année ${chunk.year}` : ''}]\n${chunk.text}`
+          `[Source: ${chunk.filename || 'Document'}${chunk.page ? `, page ${chunk.page}` : ''}${chunk.year ? `, année ${chunk.year}` : ''}${chunk.temporalScore ? `, pertinence temporelle: ${(chunk.temporalScore * 100).toFixed(1)}%` : ''}]\n${chunk.text}`
       )
       .join('\n---\n');
 
-    // 4. Construction du prompt pour Mistral
+    // 5. Construction du prompt pour Mistral
     const userPrompt = `Contexte des documents municipaux :
 ${contextText}
 
 Question de l'utilisateur : ${message}`;
 
-    // 5. Génération de la réponse avec Mistral (tâche chatCompletion)
+    // 6. Génération de la réponse avec Mistral (tâche chatCompletion)
     console.log('[API] Génération de la réponse avec Mistral...');
     const llmRes = await hf.chatCompletion({
       model: mistralModel,
@@ -134,8 +158,8 @@ Question de l'utilisateur : ${message}`;
       llmRes.choices?.[0]?.message?.content || "Désolé, je n'ai pas pu générer de réponse.";
     console.log('[API] Réponse générée:', answer.substring(0, 100) + '...');
 
-    // 6. Construction des sources avec URLs
-    const sourcesWithUrls = topChunks.map((chunk) => {
+    // 7. Construction des sources avec URLs et métadonnées temporelles
+    const sourcesWithUrls = finalChunks.map((chunk) => {
       // Construction de l'URL du PDF basée sur le filename et l'année
       let pdfUrl = null;
       if (chunk.filename && chunk.year) {
@@ -153,18 +177,21 @@ Question de l'utilisateur : ${message}`;
         filename: chunk.filename,
         page: chunk.page,
         year: chunk.year,
-        score: chunk.score,
+        score: chunk.finalScore || chunk.score, // Utiliser le score final si disponible
+        originalScore: chunk.originalScore || chunk.score,
+        temporalScore: chunk.temporalScore,
         url: pdfUrl,
         // URL avec ancre pour aller directement à la page (si supporté par le navigateur)
         urlWithPage: chunk.page && pdfUrl ? `${pdfUrl}#page=${chunk.page}` : pdfUrl,
       };
     });
 
-    // 7. Retour de la réponse avec métadonnées
+    // 8. Retour de la réponse avec métadonnées enrichies
     const responseData = {
       answer,
       sources: sourcesWithUrls,
-      chunksFound: topChunks.length,
+      chunksFound: finalChunks.length,
+      searchMetadata, // Inclure les métadonnées de recherche
       systemPrompt,
       contextText,
       userPrompt,

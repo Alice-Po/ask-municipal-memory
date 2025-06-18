@@ -99,11 +99,13 @@
   let showSystemPrompt = false;        // Affichage du prompt système
   let showContextText = false;         // Affichage du contexte utilisé
   let showWarning = false;             // Affichage des avertissements
+  let showSearchMetadata = false;      // Affichage des métadonnées de recherche
   
   // Métadonnées de la dernière réponse (pour debug)
   let lastSystemPrompt = systemPrompt; // Dernier prompt système utilisé
   let lastContextText = '';            // Dernier contexte extrait
   let lastChunksFound = 0;             // Nombre d'extraits trouvés
+  let lastSearchMetadata = null;       // Métadonnées de recherche hybride
   
   // =============================================================================
   // CONFIGURATION
@@ -172,7 +174,8 @@
         chunksFound: data.chunksFound,   // Nombre d'extraits
         systemPrompt: data.systemPrompt, // Prompt système utilisé
         contextText: data.contextText,   // Contexte extrait
-        userPrompt: data.userPrompt      // Prompt utilisateur
+        userPrompt: data.userPrompt,      // Prompt utilisateur
+        searchMetadata: data.searchMetadata
       });
       
     } catch (err) {
@@ -214,6 +217,7 @@
       lastSystemPrompt = metadata.systemPrompt || '';
       lastContextText = metadata.contextText || '';
       lastChunksFound = metadata.chunksFound || 0;
+      lastSearchMetadata = metadata.searchMetadata || null;
     }
     
     // Scroll automatique vers le bas après un court délai
@@ -297,6 +301,30 @@
     return formattedAnswer;
   }
   
+  /**
+   * Tronque intelligemment un nom de fichier pour l'affichage
+   * @param {string} filename - Nom du fichier complet
+   * @param {number} maxLength - Longueur maximale (défaut: 30)
+   * @returns {string} - Nom tronqué avec ellipsis
+   */
+  function truncateFilename(filename, maxLength = 30) {
+    if (!filename || filename.length <= maxLength) return filename;
+    
+    // Si c'est un PDF, on garde l'extension
+    if (filename.endsWith('.pdf')) {
+      const nameWithoutExt = filename.slice(0, -4);
+      const extension = '.pdf';
+      const maxNameLength = maxLength - extension.length - 3; // 3 pour "..."
+      
+      if (nameWithoutExt.length <= maxNameLength) return filename;
+      
+      return nameWithoutExt.slice(0, maxNameLength) + '...' + extension;
+    }
+    
+    // Sinon, troncature simple
+    return filename.slice(0, maxLength - 3) + '...';
+  }
+  
   // =============================================================================
   // LIFECYCLE DU COMPOSANT
   // =============================================================================
@@ -371,30 +399,69 @@
             {#if message.type === MESSAGE_TYPES.BOT && message.sources}
               <div class="message-sources">
                 <div class="sources-header">
-                  📚 Sources utilisées ({message.chunksFound} extraits)
-                </div>
-                {#each message.sources as source}
-                  <div class="source-item">
-                    <button 
-                      on:click={() => openPdf(source.urlWithPage, source.filename, source.page)}
-                      class="source-link-btn"
-                      title="Ouvrir {source.filename} page {source.page || '1'}"
-                      disabled={!source.url}
-                      aria-label="Ouvrir {source.filename} page {source.page || '1'}"
-                    >
-                      <span class="source-filename">{source.filename || 'Document'}</span>
-                      {#if source.page}
-                        <span class="source-page">page {source.page}</span>
-                      {/if}
-                      <span class="source-score">({Math.round(source.score * 100)}% pertinence)</span>
-                      {#if source.url}
-                        <span class="source-icon">📄</span>
-                      {:else}
-                        <span class="source-icon-disabled">❌</span>
-                      {/if}
-                    </button>
+                  <div class="sources-title">
+                    📚 Sources utilisées ({message.chunksFound} extraits)
                   </div>
-                {/each}
+                  {#if message.searchMetadata}
+                    {#if message.searchMetadata.queryYear}
+                      <div class="temporal-info">
+                        🕒 {message.searchMetadata.queryYear}
+                        {#if message.searchMetadata.temporalFilterApplied}
+                          <span class="filter-applied">±2 ans</span>
+                        {/if}
+                        {#if message.searchMetadata.temporalWeightingApplied}
+                          <span class="weighting-applied">pondéré</span>
+                        {/if}
+                      </div>
+                    {/if}
+                  {/if}
+                </div>
+                <div class="sources-list">
+                  {#each message.sources as source}
+                    <div class="source-item">
+                      <button 
+                        on:click={() => openPdf(source.urlWithPage, source.filename, source.page)}
+                        class="source-link-btn"
+                        title="Ouvrir {source.filename} page {source.page || '1'}"
+                        disabled={!source.url}
+                        aria-label="Ouvrir le document {source.filename || 'Document'} {source.page ? `page ${source.page}` : ''} {source.year ? `de l'année ${source.year}` : ''} - Pertinence {Math.round(source.score * 100)}%"
+                      >
+                        <div class="source-main-info">
+                          <div 
+                            class="source-filename" 
+                            title={source.filename && source.filename.length > 30 ? source.filename : ''}
+                          >
+                            {truncateFilename(source.filename)}
+                          </div>
+                          <div class="source-meta">
+                            {#if source.year}
+                              <span class="source-year">{source.year}</span>
+                            {/if}
+                            {#if source.page}
+                              <span class="source-page">page {source.page}</span>
+                            {/if}
+                          </div>
+                        </div>
+                        <div class="source-scores">
+                          <div class="score-container">
+                            <span class="score-label">Pertinence:</span>
+                            <span class="source-score">
+                              {Math.round(source.score * 100)}%
+                              {#if source.temporalScore}
+                                <span class="temporal-score">({Math.round(source.temporalScore * 100)}%)</span>
+                              {/if}
+                            </span>
+                          </div>
+                          {#if source.url}
+                            <span class="source-icon" title="Ouvrir le document">📄</span>
+                          {:else}
+                            <span class="source-icon-disabled" title="Document non disponible">❌</span>
+                          {/if}
+                        </div>
+                      </button>
+                    </div>
+                  {/each}
+                </div>
               </div>
             {/if}
             
@@ -499,6 +566,39 @@
       {#if showContextText}
         <div id="context-text-content" class="accordion-content">
           <div class="context-text" >{lastContextText || 'Aucun extrait disponible'}</div>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Accordéon Métadonnées de Recherche -->
+    <div class="accordion">
+      <button 
+        class="accordion-header"
+        on:click={() => showSearchMetadata = !showSearchMetadata}
+        aria-expanded={showSearchMetadata}
+        aria-controls="search-metadata-content"
+      >
+        <span>🔍 Métadonnées de Recherche</span>
+        <span class="accordion-icon">{showSearchMetadata ? '▼' : '▶'}</span>
+      </button>
+      {#if showSearchMetadata}
+        <div id="search-metadata-content" class="accordion-content">
+          <div class="search-metadata">
+            {#if lastSearchMetadata}
+              <p><strong>Recherche hybride temporelle:</strong></p>
+              <ul>
+                {#if lastSearchMetadata.queryYear}
+                  <li><strong>Année détectée:</strong> {lastSearchMetadata.queryYear}</li>
+                {/if}
+                <li><strong>Filtrage temporel:</strong> {lastSearchMetadata.temporalFilterApplied ? 'Activé' : 'Désactivé'}</li>
+                <li><strong>Pondération temporelle:</strong> {lastSearchMetadata.temporalWeightingApplied ? 'Activée' : 'Désactivée'}</li>
+                <li><strong>Chunks originaux:</strong> {lastSearchMetadata.originalCount}</li>
+                <li><strong>Chunks après filtrage:</strong> {lastSearchMetadata.filteredCount}</li>
+              </ul>
+            {:else}
+              <p>Aucune métadonnée de recherche disponible</p>
+            {/if}
+          </div>
         </div>
       {/if}
     </div>
@@ -655,38 +755,122 @@
   }
 
   .sources-header {
-    @apply text-xs font-medium text-gray-600 dark:text-gray-400 mb-2;
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3;
+  }
+
+  .sources-title {
+    @apply text-xs font-medium text-gray-600 dark:text-gray-400;
+  }
+
+  .sources-list {
+    @apply space-y-2;
   }
 
   .source-item {
-    @apply mb-1;
+    @apply w-full;
+    animation: slideInSource 0.3s ease-out;
+    animation-fill-mode: both;
+  }
+
+  .source-item:nth-child(1) { animation-delay: 0.1s; }
+  .source-item:nth-child(2) { animation-delay: 0.2s; }
+  .source-item:nth-child(3) { animation-delay: 0.3s; }
+  .source-item:nth-child(4) { animation-delay: 0.4s; }
+  .source-item:nth-child(5) { animation-delay: 0.5s; }
+
+  @keyframes slideInSource {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   .source-link-btn {
     @apply w-full text-left text-xs text-gray-500 dark:text-gray-400;
-    @apply flex items-center gap-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600;
-    @apply transition-colors cursor-pointer;
+    @apply flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600;
+    @apply transition-all duration-200 cursor-pointer;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply border border-transparent hover:border-gray-300 dark:hover:border-gray-500;
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50;
+    @apply active:scale-[0.98];
+  }
+
+  .source-link-btn:hover {
+    @apply shadow-sm;
+  }
+
+  .source-link-btn:disabled {
+    @apply hover:bg-transparent hover:border-transparent hover:shadow-none;
+  }
+
+  .source-main-info {
+    @apply flex-1 min-w-0;
   }
 
   .source-filename {
-    @apply font-medium text-gray-700 dark:text-gray-300;
+    @apply font-medium text-gray-700 dark:text-gray-300 text-sm;
+    @apply truncate;
+  }
+
+  .source-meta {
+    @apply flex flex-wrap gap-1 mt-1;
   }
 
   .source-page {
-    @apply bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs;
+    @apply bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded text-xs;
+  }
+
+  .source-scores {
+    @apply flex items-center gap-2 flex-shrink-0;
+  }
+
+  .score-container {
+    @apply flex items-center gap-1;
+  }
+
+  .score-label {
+    @apply text-xs font-medium text-gray-600 dark:text-gray-400;
   }
 
   .source-score {
-    @apply text-gray-400 text-xs;
+    @apply text-gray-400 text-xs whitespace-nowrap;
+  }
+
+  .source-year {
+    @apply text-blue-600 dark:text-blue-400 text-xs font-medium;
+    @apply bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded;
+  }
+
+  .temporal-score {
+    @apply text-orange-600 dark:text-orange-400 text-xs;
+    @apply bg-orange-100 dark:bg-orange-900 px-1 py-0.5 rounded;
+  }
+
+  .temporal-info {
+    @apply text-xs text-blue-600 dark:text-blue-400;
+    @apply bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded;
+    @apply flex items-center gap-1 flex-wrap;
+  }
+
+  .filter-applied {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .weighting-applied {
+    @apply text-purple-600 dark:text-purple-400;
   }
 
   .source-icon {
-    @apply text-green-500 ml-auto;
+    @apply text-green-500 text-sm cursor-pointer;
+    @apply hover:scale-110 transition-transform;
   }
 
   .source-icon-disabled {
-    @apply text-red-500 ml-auto;
+    @apply text-red-500 text-sm;
   }
 
   .message-time {
@@ -762,6 +946,69 @@
   @media (max-width: 640px) {
     .message-content {
       @apply max-w-[90%];
+    }
+
+    .sources-header {
+      @apply flex-col gap-1;
+    }
+
+    .sources-title {
+      @apply text-sm;
+    }
+
+    .temporal-info {
+      @apply text-xs px-1.5 py-0.5;
+    }
+
+    .source-link-btn {
+      @apply p-1.5;
+    }
+
+    .source-filename {
+      @apply text-xs;
+    }
+
+    .source-meta {
+      @apply gap-0.5;
+    }
+
+    .source-year,
+    .source-page {
+      @apply px-1 py-0.5 text-xs;
+    }
+
+    .source-scores {
+      @apply gap-1;
+    }
+
+    .source-score {
+      @apply text-xs;
+    }
+
+    .temporal-score {
+      @apply px-0.5 py-0.5 text-xs;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .message-content {
+      @apply max-w-[95%];
+    }
+
+    .source-link-btn {
+      @apply flex-col items-start gap-1 p-2;
+    }
+
+    .source-scores {
+      @apply w-full justify-between;
+    }
+
+    .score-label {
+      @apply hidden;
+    }
+
+    .temporal-info {
+      @apply flex-col items-start gap-0.5;
     }
   }
 
@@ -846,6 +1093,19 @@
 
   .context-text {
     @apply border-l-4 border-green-500;
+  }
+
+  .search-metadata {
+    @apply border-l-4 border-purple-500;
+    @apply bg-purple-50 dark:bg-purple-900/20 p-3 rounded;
+  }
+
+  .search-metadata ul {
+    @apply list-disc list-inside space-y-1 mt-2;
+  }
+
+  .search-metadata li {
+    @apply text-sm text-gray-700 dark:text-gray-300;
   }
 
   /* =============================================================================
