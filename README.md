@@ -1,6 +1,6 @@
 # Ask Municipal Memory: MVP for Transparent Municipal Council Search
 
-<img src="memoires-municipales.png" alt="Mémoires municipales - Prototype d'IA pour la recherche dans les comptes-rendus municipaux" width="100%" />
+<img src="public/memoires-municipales.png" alt="Mémoires municipales - Prototype d'IA pour la recherche dans les comptes-rendus municipaux" width="100%" />
 
 ## Project Overview
 
