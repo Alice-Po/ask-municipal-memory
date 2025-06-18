@@ -126,7 +126,7 @@ Question de l'utilisateur : ${message}`;
       ],
       parameters: {
         max_tokens: 512, // Réponse plus longue pour plus de contexte
-        temperature: 0.7, // Un peu de créativité
+        temperature: 0.3, // Un peu de créativité
       },
     });
 
