@@ -1,3 +1,5 @@
+[<img src="memoires-municipales.png" alt="Mémoires municipales - Prototype d'IA pour la recherche dans les comptes-rendus municipaux" width="100%" />]
+
 # Ask Municipal Memory: MVP for Transparent Municipal Council Search
 
 [<img width="1234" alt="new-blog" src="https://github.com/user-attachments/assets/4afbcff2-64a9-4808-81b9-96be4f10eeec" />](https://flo-bit.dev/blog-template/)
