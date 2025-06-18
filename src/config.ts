@@ -55,7 +55,7 @@ export const SOCIAL_LINKS: {
   BLUESKY_URL?: string;
   SHOW_RSS?: boolean;
 } = {
-  SHOW_RSS: true,
+  SHOW_RSS: false,
   GITHUB_URL: 'https://github.com/Alice-Po',
   EMAIL: 'alicepoggioli.fr/#contact-form',
 };
