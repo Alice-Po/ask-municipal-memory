@@ -56,7 +56,7 @@ export const SOCIAL_LINKS: {
   SHOW_RSS?: boolean;
 } = {
   SHOW_RSS: false,
-  GITHUB_URL: 'https://github.com/Alice-Po',
+  GITHUB_URL: 'https://github.com/Alice-Po/ask-municipal-memory',
   EMAIL: 'alicepoggioli.fr/#contact-form',
 };
 
